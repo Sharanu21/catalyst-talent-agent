@@ -55,7 +55,7 @@ TalentScout AI is a fully autonomous talent scouting agent that:
 |---|---|---|
 | Match Score | 60% | Skill overlap, experience fit, role alignment (AI-scored 0-100) |
 | Interest Score | 40% | Outreach conversation signals — enthusiasm, availability, questions asked (AI-scored 0-100) |
-| **Combined Score** | 100% | `0.6 × Match + 0.4 × Interest` |
+| **Combined Score** | 100% | Match is weighted higher (60%) because skill alignment is critical, while interest (40%) ensures candidates are actively engaged and available.|
 
 ### Match Score Breakdown
 - Required skills present in candidate profile
@@ -69,7 +69,7 @@ TalentScout AI is a fully autonomous talent scouting agent that:
 - Confirmed availability
 - Salary alignment
 
-## 🛠️ Tech Stack
+ Tech Stack
 
 | Layer | Technology |
 |---|---|
@@ -79,12 +79,12 @@ TalentScout AI is a fully autonomous talent scouting agent that:
 | Candidate Data | 50 mock profiles (JSON) |
 | Deployment | Render (backend) + Netlify (frontend) |
 
-## 🚀 Local Setup
+##  Local Setup
 
 ### Prerequisites
 - Python 3.8+
 - Node.js 16+
-- Gemini API key (free at aistudio.google.com)
+-  Groq API key (free)
 
 ### Backend
 
@@ -118,7 +118,7 @@ npm start
 
 Frontend runs at: `http://localhost:3000`
 
-## 📡 API Endpoints
+##  API Endpoints
 
 | Method | Endpoint | Description |
 |---|---|---|
@@ -128,7 +128,7 @@ Frontend runs at: `http://localhost:3000`
 | POST | `/scout` | Full scouting pipeline |
 | POST | `/outreach-chat` | Live AI chat with candidate |
 
-## 🔑 APIs & Tools Used
+##  APIs & Tools Used
 
 | Tool | Purpose | Tier |
 |---|---|---|
@@ -136,7 +136,7 @@ Frontend runs at: `http://localhost:3000`
 | FastAPI | Backend framework | Open source |
 | React.js | Frontend | Open source |
 
-## 📁 Project Structure
+##  Project Structure
 
 ```
 catalyst-talent-agent/
@@ -167,6 +167,27 @@ catalyst-talent-agent/
 4. View ranked shortlist with Match + Interest scores
 5. Click any candidate to view their outreach conversation
 6. Continue the conversation live with the AI-powered candidate
+
+## Live Demo
+Frontend: https://catalyst-talent-agent.netlify.app/ 
+Backend: https://catalyst-talent-agent-5ahj.onrender.com
+
+##  Sample Input (Job Description)
+Senior Backend Engineer  
+- 5+ years experience  
+- Java / Spring Boot  
+- Microservices  
+- AWS
+   
+##  Sample Output (Top Candidates)
+1. Aarav Sharma  
+   Match: 92  
+   Interest: 85  
+   Combined: 89.8  
+2. Priya Nair  
+   Match: 88  
+   Interest: 80  
+   Combined: 84.8  
 
 ## 👤 Built By
 
