@@ -28,7 +28,7 @@ TalentScout AI is a fully autonomous talent scouting agent that:
 │  • Score Bars    │     │         │                 │          │
 │  • Outreach Chat │     │  ┌──────▼──────────────────▼──────┐  │
 └──────────────────┘     │  │      Match Scoring Agent        │  │
-                         │  │   (Gemini 2.0 Flash + rules)   │  │
+                         │  │     (Groq + rules)   │  │
                          │  └──────────────┬─────────────────┘  │
                          │                 │                     │
                          │  ┌──────────────▼─────────────────┐  │
@@ -44,7 +44,7 @@ TalentScout AI is a fully autonomous talent scouting agent that:
                          └─────────────────────────────────────┘
                                           │
                                    ┌──────▼──────┐
-                                   │  Gemini API  │
+                                   │  Groq API  │
                                    │ (Free Tier)  │
                                    └─────────────┘
 ```
@@ -75,7 +75,7 @@ TalentScout AI is a fully autonomous talent scouting agent that:
 |---|---|
 | Frontend | React.js |
 | Backend | Python FastAPI |
-| AI/LLM | Google Gemini 2.0 Flash (Free Tier) |
+| AI/LLM | Groq (Free Tier) |
 | Candidate Data | 50 mock profiles (JSON) |
 | Deployment | Render (backend) + Netlify (frontend) |
 
@@ -84,7 +84,7 @@ TalentScout AI is a fully autonomous talent scouting agent that:
 ### Prerequisites
 - Python 3.8+
 - Node.js 16+
--  Groq API key (free)
+- Groq API key (free)
 
 ### Backend
 
@@ -132,7 +132,7 @@ Frontend runs at: `http://localhost:3000`
 
 | Tool | Purpose | Tier |
 |---|---|---|
-| Google Gemini 2.0 Flash | LLM for all AI agents | Free |
+| Groq | LLM for all AI agents | Free |
 | FastAPI | Backend framework | Open source |
 | React.js | Frontend | Open source |
 
@@ -144,7 +144,7 @@ catalyst-talent-agent/
 │   ├── main.py              # All API endpoints + agent logic
 │   ├── candidates.json      # 50 mock candidate profiles
 │   ├── requirements.txt
-│   └── .env                 # Your Gemini API key (not committed)
+│   └── .env                 # Your Groq API key 
 ├── frontend/
 │   ├── src/
 │   │   ├── App.js           # Main app
