@@ -73,7 +73,7 @@ def call_llm_with_retry(prompt: str, max_tokens: int = 150, max_retries: int = 3
     for attempt in range(max_retries):
         try:
             response = client.chat.completions.create(
-                model="llama3-8b-8192",  # Updated model name
+                model="llama-3.1-8b-instant", 
                 messages=[{"role": "user", "content": prompt}],
                 max_tokens=max_tokens,
                 temperature=0.3
