@@ -60,14 +60,16 @@ JD: {jd_short}
 def score_candidate(candidate: dict, jd: dict) -> dict:
     prompt = f"""Job:{jd['job_title']} needs:{','.join(jd['required_skills'][:4])} exp:{jd['min_experience']}-{jd['max_experience']}yrs.
 Candidate:{candidate['name']} {candidate['experience_years']}yrs skills:{','.join(candidate['skills'][:5])}.
-Return ONLY JSON:{{"match_score":75,"skill_match_pct":80,"experience_fit":"Good Fit","matched_skills":["s1"],"missing_skills":["s2"],"explanation":"reason","strengths":["s1"],"concerns":["c1"]}}"""
+Analyze carefully and return ONLY JSON:
+{{"match_score":0,"skill_match_pct":0,"experience_fit":"","matched_skills":[],"missing_skills":[],"explanation":"your analysis","strengths":[],"concerns":[]}}"""
     raw = call_llm(prompt, 150).strip().replace("```json","").replace("```","").strip()
     return json.loads(raw)
 
 
 def simulate_outreach(candidate: dict, jd: dict) -> dict:
     prompt = f"""Recruiter outreach: {candidate['name']} ({candidate['current_role']},{candidate['experience_years']}yrs) for {jd['job_title']}. Available:{candidate['availability']}.
-Return ONLY JSON:{{"conversation":[{{"role":"recruiter","message":"Hi {candidate['name']}, saw your profile for {jd['job_title']} role - interested?"}},{{"role":"candidate","message":"reply"}},{{"role":"recruiter","message":"follow up"}},{{"role":"candidate","message":"reply"}}],"interest_score":75,"interest_level":"High","interest_signals":["signal"],"availability_confirmed":true,"interest_summary":"summary"}}"""
+Return ONLY JSON:
+{{"conversation":[{{"role":"recruiter","message":"Hi {candidate['name']}, saw your profile for {jd['job_title']} role - interested?"}},{{"role":"candidate","message":"[reply]"}},{{"role":"recruiter","message":"[follow up]"}},{{"role":"candidate","message":"[reply]"}}],"interest_score":0,"interest_level":"","interest_signals":[],"availability_confirmed":true,"interest_summary":""}}"""
     raw = call_llm(prompt, 250).strip().replace("```json","").replace("```","").strip()
     return json.loads(raw)
 
@@ -144,7 +146,7 @@ Reply in 2 sentences only. Return ONLY reply text."""
         reply = call_llm(prompt, 80).strip()
 
         interest_raw = call_llm(
-            f"""Reply:"{reply[:100]}". Interest level? Return ONLY:{{"interest_score":75,"interest_level":"High"}}""",
+            f"""Reply:"{reply[:100]}". Analyze interest level. Return ONLY JSON:{{"interest_score":0,"interest_level":""}}""",
             40
         ).strip().replace("```json","").replace("```","").strip()
         interest_data = json.loads(interest_raw)
