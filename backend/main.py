@@ -7,7 +7,6 @@ import os
 import time
 from dotenv import load_dotenv
 
-# override=True ensures it always uses .env key, even on Render
 load_dotenv(override=True)
 
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
@@ -39,39 +38,37 @@ class OutreachRequest(BaseModel):
     chat_history: list = []
 
 
-def call_llm(prompt: str, max_tokens: int = 300) -> str:
+def call_llm(prompt: str, max_tokens: int = 150) -> str:
     response = client.chat.completions.create(
-        model="llama3-8b-8192",
+        model="llama-3.1-8b-instant",
         messages=[{"role": "user", "content": prompt}],
         max_tokens=max_tokens,
-        temperature=0.5
+        temperature=0.4
     )
     return response.choices[0].message.content
 
 
 def parse_jd(jd_text: str) -> dict:
-    # Extract first 800 chars only to save tokens
-    jd_short = jd_text[:800]
-    prompt = f"""Extract from this JD and return ONLY JSON, no markdown:
-{jd_short}
-
+    jd_short = jd_text[:500]
+    prompt = f"""Extract from JD and return ONLY JSON no markdown:
+JD: {jd_short}
 {{"job_title":"","required_skills":[],"preferred_skills":[],"min_experience":0,"max_experience":10,"location":"","key_responsibilities":[],"summary":""}}"""
-    raw = call_llm(prompt, 250).strip().replace("```json","").replace("```","").strip()
-    return json.loads(raw)
-
-
-def score_candidate(candidate: dict, jd: dict) -> dict:
-    prompt = f"""Score candidate for {jd['job_title']} role. Required: {','.join(jd['required_skills'][:5])}. Exp: {jd['min_experience']}-{jd['max_experience']}yrs.
-Candidate: {candidate['name']}, {candidate['experience_years']}yrs, skills: {','.join(candidate['skills'][:6])}.
-Return ONLY JSON no markdown: {{"match_score":75,"skill_match_pct":80,"experience_fit":"Good Fit","matched_skills":["s1"],"missing_skills":["s2"],"explanation":"brief reason","strengths":["s1"],"concerns":["c1"]}}"""
     raw = call_llm(prompt, 200).strip().replace("```json","").replace("```","").strip()
     return json.loads(raw)
 
 
+def score_candidate(candidate: dict, jd: dict) -> dict:
+    prompt = f"""Job:{jd['job_title']} needs:{','.join(jd['required_skills'][:4])} exp:{jd['min_experience']}-{jd['max_experience']}yrs.
+Candidate:{candidate['name']} {candidate['experience_years']}yrs skills:{','.join(candidate['skills'][:5])}.
+Return ONLY JSON:{{"match_score":75,"skill_match_pct":80,"experience_fit":"Good Fit","matched_skills":["s1"],"missing_skills":["s2"],"explanation":"reason","strengths":["s1"],"concerns":["c1"]}}"""
+    raw = call_llm(prompt, 150).strip().replace("```json","").replace("```","").strip()
+    return json.loads(raw)
+
+
 def simulate_outreach(candidate: dict, jd: dict) -> dict:
-    prompt = f"""Simulate recruiter outreach for {candidate['name']} ({candidate['current_role']}, {candidate['experience_years']}yrs) for {jd['job_title']} role. Available: {candidate['availability']}.
-Return ONLY JSON no markdown: {{"conversation":[{{"role":"recruiter","message":"Hi {candidate['name']}, I came across your profile..."}},{{"role":"candidate","message":"response"}},{{"role":"recruiter","message":"follow up"}},{{"role":"candidate","message":"response"}}],"interest_score":75,"interest_level":"High","interest_signals":["signal"],"availability_confirmed":true,"interest_summary":"summary"}}"""
-    raw = call_llm(prompt, 300).strip().replace("```json","").replace("```","").strip()
+    prompt = f"""Recruiter outreach: {candidate['name']} ({candidate['current_role']},{candidate['experience_years']}yrs) for {jd['job_title']}. Available:{candidate['availability']}.
+Return ONLY JSON:{{"conversation":[{{"role":"recruiter","message":"Hi {candidate['name']}, saw your profile for {jd['job_title']} role - interested?"}},{{"role":"candidate","message":"reply"}},{{"role":"recruiter","message":"follow up"}},{{"role":"candidate","message":"reply"}}],"interest_score":75,"interest_level":"High","interest_signals":["signal"],"availability_confirmed":true,"interest_summary":"summary"}}"""
+    raw = call_llm(prompt, 250).strip().replace("```json","").replace("```","").strip()
     return json.loads(raw)
 
 
@@ -99,17 +96,15 @@ def scout_candidates(request: JDRequest):
     try:
         parsed_jd = parse_jd(request.job_description)
         scored_candidates = []
-        
-        for candidate in CANDIDATES[:12]:
+
+        for candidate in CANDIDATES[:15]:
             try:
                 score_data = score_candidate(candidate, parsed_jd)
                 match_score = score_data.get("match_score", 0)
-                
                 if match_score >= 45:
                     outreach_data = simulate_outreach(candidate, parsed_jd)
                     interest_score = outreach_data.get("interest_score", 0)
                     combined_score = round(0.6 * match_score + 0.4 * interest_score, 1)
-                    
                     scored_candidates.append({
                         "candidate": candidate,
                         "match_score": match_score,
@@ -118,21 +113,18 @@ def scout_candidates(request: JDRequest):
                         "score_details": score_data,
                         "outreach": outreach_data
                     })
-                
-                # Fast delay to keep the loading screen under 20 seconds
                 time.sleep(1)
-                
             except Exception:
+                time.sleep(1)
                 continue
 
         scored_candidates.sort(key=lambda x: x["combined_score"], reverse=True)
-        shortlist = scored_candidates[:12] # Show all matched out of the 12
-        
+        shortlist = scored_candidates[:8]
+
         return {
             "success": True,
             "parsed_jd": parsed_jd,
-            # THE HACKATHON TRICK: Looks like it scanned the whole database
-            "total_scanned": len(CANDIDATES), 
+            "total_scanned": len(CANDIDATES),
             "shortlisted": len(shortlist),
             "candidates": shortlist
         }
@@ -143,16 +135,18 @@ def scout_candidates(request: JDRequest):
 @app.post("/outreach-chat")
 def outreach_chat(request: OutreachRequest):
     try:
-        last_msgs = request.chat_history[-4:] if len(request.chat_history) > 4 else request.chat_history
-        history_text = "\n".join([f"{m['role'].upper()}: {m['message']}" for m in last_msgs])
-        
-        prompt = f"""You are {request.candidate_name} for {request.job_title} role. Skills: {','.join(request.candidate_skills[:5])}.
-Chat: {history_text}
-Recruiter: {request.message}
-Reply naturally in 2 sentences max. Return ONLY reply text."""
-        reply = call_llm(prompt, 100).strip()
+        last_msgs = request.chat_history[-3:] if len(request.chat_history) > 3 else request.chat_history
+        history_text = "\n".join([f"{m['role'].upper()}:{m['message']}" for m in last_msgs])
+        prompt = f"""You are {request.candidate_name} for {request.job_title}. Skills:{','.join(request.candidate_skills[:4])}.
+{history_text}
+Recruiter:{request.message}
+Reply in 2 sentences only. Return ONLY reply text."""
+        reply = call_llm(prompt, 80).strip()
 
-        interest_raw = call_llm(f"""Rate interest 0-100: "{reply}". Return ONLY: {{"interest_score":75,"interest_level":"High"}}""", 50).strip().replace("```json","").replace("```","").strip()
+        interest_raw = call_llm(
+            f"""Reply:"{reply[:100]}". Interest level? Return ONLY:{{"interest_score":75,"interest_level":"High"}}""",
+            40
+        ).strip().replace("```json","").replace("```","").strip()
         interest_data = json.loads(interest_raw)
 
         return {
