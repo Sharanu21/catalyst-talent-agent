@@ -192,4 +192,4 @@ Senior Backend Engineer
 ## 👤 Built By
 
 Sharanabasav Meti  
-Catalyst Hackathon — Deccan.ai 2025
+Catalyst Hackathon — Deccan.ai 2026
